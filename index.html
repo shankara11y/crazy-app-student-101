@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07100d">
+  <meta name="description" content="A fictional secret-agent terminal and Caesar cipher mini-game, for entertainment only.">
+  <link rel="icon" href="data:,">
+  <title>Secret Agent Hacker Terminal</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #d7e9de;
+      --muted: #7f9889;
+      --void: #07100d;
+      --panel: rgba(11, 24, 18, .94);
+      --line: rgba(146, 215, 165, .17);
+      --green: #72f5a0;
+      --green-dim: #2c8b53;
+      --acid: #c4ff6b;
+      --amber: #edbf69;
+      --red: #ff837c;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --display: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-family: var(--mono);
+      background: var(--void);
+      color: var(--ink);
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    html { min-width: 320px; scroll-behavior: smooth; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 47% 33%, rgba(24, 81, 45, .18), transparent 52%),
+        linear-gradient(145deg, #08130e 0%, #07100d 50%, #0b1510 100%);
+    }
+    body::before {
+      position: fixed;
+      z-index: 0;
+      inset: 0;
+      content: "";
+      pointer-events: none;
+      opacity: .14;
+      background-image: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,.2) 4px);
+    }
+    button, input { font: inherit; }
+    button:focus-visible, input:focus-visible {
+      outline: 2px solid var(--acid);
+      outline-offset: 4px;
+    }
+    .rain {
+      position: fixed;
+      z-index: 0;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: .16;
+      pointer-events: none;
+    }
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: min(1160px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 28px 0 42px;
+    }
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2px 18px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .19em;
+      text-transform: uppercase;
+    }
+    .brandmark { display: flex; align-items: center; gap: 10px; }
+    .sigil {
+      display: grid;
+      width: 25px;
+      height: 25px;
+      place-items: center;
+      border: 1px solid rgba(114,245,160,.48);
+      color: var(--green);
+      font-size: 12px;
+      transform: rotate(45deg);
+    }
+    .sigil span { transform: rotate(-45deg); }
+    .live-label { display: flex; align-items: center; gap: 9px; }
+    .led {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 12px rgba(114,245,160,.72);
+      animation: blink 2.4s ease-in-out infinite;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 24px;
+      padding: 54px 2px 35px;
+    }
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin: 0 0 13px;
+      color: var(--acid);
+      font-size: 10px;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { width: 24px; height: 1px; content: ""; background: var(--acid); }
+    h1 {
+      margin: 0;
+      color: #e2f1e5;
+      font-family: var(--display);
+      font-size: clamp(34px, 5.1vw, 64px);
+      font-weight: 600;
+      letter-spacing: -.055em;
+      line-height: .99;
+    }
+    h1 span { color: var(--green); }
+    .byline {
+      margin: 15px 0 0;
+      color: #9db3a4;
+      font-family: var(--display);
+      font-size: 15px;
+      letter-spacing: .015em;
+    }
+    .mission-stamp {
+      width: 102px;
+      height: 102px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(237,191,105,.35);
+      border-radius: 50%;
+      color: var(--amber);
+      text-align: center;
+      transform: rotate(8deg);
+    }
+    .mission-stamp strong { font-size: 11px; letter-spacing: .12em; }
+    .mission-stamp small { margin-top: 5px; color: #a58d67; font-size: 8px; letter-spacing: .13em; }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(290px, .78fr);
+      gap: 17px;
+    }
+    .panel {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, rgba(12,27,19,.96), rgba(8,17,13,.94));
+      box-shadow: 0 20px 60px rgba(0,0,0,.14), inset 0 1px rgba(255,255,255,.018);
+    }
+    .panel::before {
+      position: absolute;
+      top: -1px;
+      left: 22px;
+      width: 54px;
+      height: 2px;
+      content: "";
+      background: var(--green);
+      box-shadow: 0 0 14px rgba(114,245,160,.35);
+    }
+    .panel-head {
+      display: flex;
+      min-height: 51px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 19px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 9px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .panel-head strong { color: #b8cdbd; font-weight: 500; }
+    .window-dots { display: flex; gap: 5px; }
+    .window-dots i { width: 5px; height: 5px; border-radius: 50%; background: #345443; }
+    .window-dots i:first-child { background: var(--green-dim); }
+    .terminal-body { padding: 21px 22px 17px; }
+    .terminal-readout {
+      height: 280px;
+      overflow-y: auto;
+      scrollbar-color: #315c40 transparent;
+      scrollbar-width: thin;
+      color: #a4bea9;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+    .terminal-readout p { margin: 0; overflow-wrap: anywhere; }
+    .terminal-readout .stamp { color: #526b5b; }
+    .terminal-readout .prompt { color: var(--green); }
+    .terminal-readout .ok { color: var(--acid); }
+    .terminal-readout .warn { color: var(--amber); }
+    .terminal-readout .error { color: var(--red); }
+    .cursor {
+      display: inline-block;
+      width: 7px;
+      height: 13px;
+      margin-left: 4px;
+      vertical-align: -2px;
+      background: var(--green);
+      animation: blink 1s steps(2, start) infinite;
+    }
+    .terminal-foot {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(146,215,165,.1);
+      color: #6d8976;
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .telemetry { display: flex; flex-direction: column; gap: 17px; }
+    .telemetry .panel { padding-bottom: 17px; }
+    .readout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      margin: 17px 18px 0;
+      background: rgba(146,215,165,.1);
+      border: 1px solid rgba(146,215,165,.1);
+    }
+    .metric { min-height: 71px; padding: 13px 14px; background: #0a1710; }
+    .metric small {
+      display: block;
+      margin-bottom: 8px;
+      color: #6e8877;
+      font-size: 8px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .metric strong { color: #d5eadb; font-size: 16px; font-weight: 500; }
+    .metric strong em { color: var(--green); font-size: 10px; font-style: normal; }
+    .progress-wrap { padding: 17px 19px 0; }
+    .progress-label { display: flex; justify-content: space-between; color: #819687; font-size: 9px; letter-spacing: .11em; text-transform: uppercase; }
+    .track { height: 3px; margin-top: 10px; overflow: hidden; background: #1d3024; }
+    .bar { width: 0; height: 100%; background: var(--green); transition: width .35s ease; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 17px; }
+    .action {
+      min-height: 48px;
+      padding: 10px 12px;
+      border: 1px solid rgba(114,245,160,.38);
+      background: rgba(21,52,32,.58);
+      color: #d5eddb;
+      cursor: pointer;
+      text-align: left;
+      transition: background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+    .action:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: var(--green);
+      background: rgba(36,82,48,.68);
+    }
+    .action:active:not(:disabled) { transform: translateY(0); }
+    .action:disabled { cursor: wait; opacity: .55; }
+    .action b { display: block; color: var(--green); font-size: 10px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
+    .action span { display: block; margin-top: 4px; color: #82988a; font-size: 9px; }
+    .game {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(290px, .78fr);
+      gap: 17px;
+      margin-top: 17px;
+    }
+    .game .panel { padding-bottom: 18px; }
+    .cipher-content { padding: 19px 21px 0; }
+    .cipher-instruction { margin: 0 0 14px; color: #91a999; font-size: 11px; line-height: 1.7; }
+    .cipherline {
+      padding: 14px 15px;
+      border-left: 2px solid var(--amber);
+      background: rgba(237,191,105,.06);
+      color: #f0d7a7;
+      font-size: clamp(14px, 2vw, 19px);
+      letter-spacing: .08em;
+      overflow-wrap: anywhere;
+    }
+    .cipher-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; color: #718879; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+    .answer-row { display: flex; gap: 9px; margin-top: 16px; }
+    .answer-row input {
+      min-width: 0;
+      flex: 1;
+      height: 43px;
+      padding: 0 13px;
+      border: 1px solid rgba(146,215,165,.24);
+      border-radius: 0;
+      background: #08130d;
+      color: var(--ink);
+      font-size: 12px;
+    }
+    .answer-row input::placeholder { color: #526b5b; }
+    .submit {
+      min-width: 106px;
+      border: 1px solid rgba(196,255,107,.48);
+      background: rgba(72,99,36,.24);
+      color: var(--acid);
+      cursor: pointer;
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      transition: background .18s ease;
+    }
+    .submit:hover { background: rgba(91,128,41,.36); }
+    .game-feedback { min-height: 19px; margin: 10px 0 0; color: #9bb1a2; font-size: 10px; }
+    .game-feedback.good { color: var(--green); }
+    .game-feedback.bad { color: var(--red); }
+    .side-note { padding: 18px 20px; }
+    .side-note .panel-head { margin: -18px -20px 15px; }
+    .side-note h2 { margin: 0 0 9px; color: #d1e6d6; font-family: var(--display); font-size: 18px; font-weight: 500; letter-spacing: -.02em; }
+    .side-note p { margin: 0; color: #879d8e; font-size: 11px; line-height: 1.75; }
+    .notice {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 17px;
+      padding: 13px 17px;
+      border: 1px solid rgba(237,191,105,.19);
+      color: #b9a77f;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+    .notice-mark { display: grid; width: 21px; height: 21px; flex: 0 0 21px; place-items: center; border: 1px solid rgba(237,191,105,.45); color: var(--amber); font-size: 11px; }
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 22px 2px 0;
+      color: #52695a;
+      font-size: 9px;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+    @keyframes blink { 50% { opacity: .35; } }
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 30px, 560px); padding-top: 19px; }
+      .hero { padding: 42px 1px 28px; }
+      .grid, .game { grid-template-columns: 1fr; }
+      .telemetry { display: grid; grid-template-columns: 1fr; }
+      .terminal-readout { height: 235px; }
+      .mission-stamp { width: 78px; height: 78px; }
+      .mission-stamp strong { font-size: 9px; }
+      .mission-stamp small { font-size: 7px; }
+      .actions { gap: 7px; }
+      .action { padding: 9px 8px; }
+      footer { flex-direction: column; gap: 8px; }
+    }
+    @media (max-width: 430px) {
+      .shell { width: calc(100% - 24px); }
+      .topline { font-size: 8px; letter-spacing: .12em; }
+      .hero { grid-template-columns: 1fr auto; gap: 11px; }
+      .mission-stamp { width: 64px; height: 64px; }
+      .action b { font-size: 8px; letter-spacing: .04em; }
+      .action span { font-size: 8px; }
+      .terminal-body { padding: 17px 15px 14px; }
+      .terminal-readout { font-size: 11px; }
+      .answer-row { flex-direction: column; }
+      .submit { min-height: 40px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      .rain { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas class="rain" id="matrix" aria-hidden="true"></canvas>
+  <main class="shell">
+    <header class="topline">
+      <div class="brandmark"><span class="sigil" aria-hidden="true"><span>+</span></span><span>Field Operations / Training Build</span></div>
+      <div class="live-label"><span class="led" aria-hidden="true"></span><span>Simulation environment</span></div>
+    </header>
+    <section class="hero" aria-labelledby="main-title">
+      <div>
+        <p class="eyebrow">Secure training interface · 07:42 UTC</p>
+        <h1 id="main-title">Secret Agent<br><span>Hacker Terminal</span></h1>
+        <p class="byline">Created by Student #XX</p>
+      </div>
+      <div class="mission-stamp" aria-label="Training mode only">
+        <strong>TRAINING</strong><small>MODE ONLY</small>
+      </div>
+    </section>
+    <section class="grid" aria-label="Terminal and system status">
+      <article class="panel terminal" aria-labelledby="terminal-heading">
+        <div class="panel-head"><strong id="terminal-heading">Mission console</strong><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+        <div class="terminal-body">
+          <div class="terminal-readout" id="terminal-output" role="log" aria-live="polite" aria-relevant="additions text">
+            <p><span class="stamp">[07:42:00]</span> <span class="prompt">SYSTEM //</span> Secure training channel established.</p>
+            <p><span class="stamp">[07:42:01]</span> <span class="ok">NOTICE //</span> All operations are fictional local simulations.</p>
+            <p><span class="stamp">[07:42:02]</span> <span class="prompt">AGENT //</span> Select a training exercise to begin.<span class="cursor" aria-hidden="true"></span></p>
+          </div>
+          <div class="terminal-foot"><span id="console-state">Awaiting instruction</span><span>Local session · No external connection</span></div>
+        </div>
+      </article>
+      <aside class="telemetry" aria-label="Fictional telemetry">
+        <section class="panel">
+          <div class="panel-head"><strong>Training telemetry</strong><span>01 / 03</span></div>
+          <div class="readout">
+            <div class="metric"><small>Signal quality</small><strong id="signal">— <em>STANDBY</em></strong></div>
+            <div class="metric"><small>Encryption</small><strong>AES <em>SIMULATED</em></strong></div>
+            <div class="metric"><small>Agents online</small><strong id="agent-count">01 <em>LOCAL</em></strong></div>
+            <div class="metric"><small>Threat index</small><strong>LOW <em>FICTIONAL</em></strong></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span id="progress-name">Exercise progress</span><span id="progress-value">0%</span></div>
+            <div class="track" role="progressbar" aria-label="Fictional exercise progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="bar" id="progress-bar"></div></div>
+          </div>
+        </section>
+        <div class="actions" aria-label="Training controls">
+          <button class="action" id="scan-btn" type="button"><b>Scan System</b><span>Run a local mock scan</span></button>
+          <button class="action" id="decode-btn" type="button"><b>Decode Secret</b><span>Decrypt the briefing</span></button>
+          <button class="action" id="simulate-btn" type="button"><b>Run Simulation</b><span>Launch a safe scenario</span></button>
+        </div>
+      </aside>
+    </section>
+    <section class="game" aria-label="Cipher training game">
+      <article class="panel">
+        <div class="panel-head"><strong>Field exercise / Caesar cipher</strong><span id="puzzle-number">PUZZLE 01</span></div>
+        <div class="cipher-content">
+          <p class="cipher-instruction">A message was shifted through the alphabet. Decode it and enter the original phrase. Spaces and punctuation stay in place.</p>
+          <div class="cipherline" id="cipher-text" aria-label="Encrypted message"></div>
+          <div class="cipher-meta"><span id="shift-label">Shift key: 3</span><span>Letters wrap A ↔ Z</span></div>
+          <form class="answer-row" id="decode-form">
+            <label for="answer" class="visually-hidden" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">Decoded phrase</label>
+            <input id="answer" name="answer" type="text" autocomplete="off" spellcheck="false" placeholder="Type decoded phrase…" aria-describedby="game-feedback">
+            <button class="submit" type="submit">Check phrase</button>
+          </form>
+          <p class="game-feedback" id="game-feedback" role="status" aria-live="polite">Enter the plain-text message to verify your answer.</p>
+        </div>
+      </article>
+      <aside class="panel side-note">
+        <div class="panel-head"><strong>Agent handbook</strong><span>FIELD NOTE 04</span></div>
+        <h2>Keep it fictional.</h2>
+        <p>This console is a playful training prop. Buttons run scripted animations in your browser only; they do not inspect devices, connect to systems, or send data anywhere.</p>
+      </aside>
+    </section>
+    <div class="notice" role="note"><span class="notice-mark" aria-hidden="true">i</span><span>Entertainment prototype only. No actual hacking, scanning, networking, or system access takes place.</span></div>
+    <footer><span>Secret Agent Hacker Terminal</span><span>Everything runs locally in this page</span></footer>
+  </main>
+  <script>
+    "use strict";
+    // Public helper for the console: decodeCaesar("KHOOR", 3) === "HELLO".
+    function decodeCaesar(text, shift) {
+      const amount = ((Number(shift) % 26) + 26) % 26;
+      return String(text).replace(/[a-z]/gi, function (letter) {
+        const base = letter === letter.toUpperCase() ? 65 : 97;
+        return String.fromCharCode((letter.charCodeAt(0) - base - amount + 26) % 26 + base);
+      });
+    }
+    window.decodeCaesar = decodeCaesar;
+    console.assert(decodeCaesar("KHOOR", 3) === "HELLO", "Caesar helper: uppercase decode");
+    console.assert(decodeCaesar("Dwwdfn, dw Gdzq!", 3) === "Attack, at Dawn!", "Caesar helper: punctuation and case");
+    console.assert(decodeCaesar("ABC", 29) === "XYZ", "Caesar helper: normalized shift");
+
+    (function () {
+      const output = document.getElementById("terminal-output");
+      const state = document.getElementById("console-state");
+      const bar = document.getElementById("progress-bar");
+      const progressText = document.getElementById("progress-value");
+      const progressName = document.getElementById("progress-name");
+      const progressTrack = document.querySelector('[role="progressbar"]');
+      const buttons = Array.from(document.querySelectorAll(".action"));
+      const signal = document.getElementById("signal");
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let busy = false;
+      let lineCount = 2;
+      const timeTag = function () {
+        const seconds = String(lineCount++).padStart(2, "0");
+        return "07:42:" + seconds;
+      };
+      function log(message, kind) {
+        const p = document.createElement("p");
+        const stamp = document.createElement("span");
+        const label = document.createElement("span");
+        stamp.className = "stamp";
+        stamp.textContent = "[" + timeTag() + "] ";
+        label.className = kind || "prompt";
+        label.textContent = "AGENT // ";
+        p.append(stamp, label, document.createTextNode(message));
+        output.appendChild(p);
+        output.scrollTop = output.scrollHeight;
+      }
+      function setProgress(value, label) {
+        const safeValue = Math.max(0, Math.min(100, Math.round(value)));
+        bar.style.width = safeValue + "%";
+        progressText.textContent = safeValue + "%";
+        progressTrack.setAttribute("aria-valuenow", String(safeValue));
+        if (label) progressName.textContent = label;
+      }
+      function runExercise(name, lines, finalMessage, complete) {
+        if (busy) return;
+        busy = true;
+        buttons.forEach(function (button) { button.disabled = true; });
+        state.textContent = name + " in progress";
+        setProgress(0, name);
+        log(name + " started. Simulation data loaded locally.", "prompt");
+        const duration = reducedMotion ? 80 : 420;
+        let step = 0;
+        function advance() {
+          step += 1;
+          setProgress(step / lines.length * 100);
+          if (lines[step - 1]) log(lines[step - 1], step === lines.length ? "ok" : "prompt");
+          if (step < lines.length) {
+            window.setTimeout(advance, duration);
+          } else {
+            log(finalMessage, "ok");
+            state.textContent = "Exercise complete";
+            busy = false;
+            buttons.forEach(function (button) { button.disabled = false; });
+            if (complete) complete();
+          }
+        }
+        window.setTimeout(advance, duration);
+      }
+      document.getElementById("scan-btn").addEventListener("click", function () {
+        signal.innerHTML = "— <em>SIMULATING</em>";
+        runExercise("Mock system scan", [
+          "Mapping fictional sectors 01–04…",
+          "Checking training signatures…",
+          "No real devices or networks contacted."
+        ], "Mock scan complete. Training environment is clear.", function () {
+          signal.innerHTML = "98 <em>SIMULATED</em>";
+        });
+      });
+      document.getElementById("decode-btn").addEventListener("click", function () {
+        const secret = decodeCaesar("WKH SDWK LV VDIH", 3);
+        runExercise("Briefing decode", [
+          "Loading sample ciphertext…",
+          "Applying Caesar shift −3…",
+          "Decoded locally: \"" + secret + "\""
+        ], "Briefing decoded. Message: " + secret + ".", null);
+      });
+      document.getElementById("simulate-btn").addEventListener("click", function () {
+        runExercise("Scenario simulation", [
+          "Starting fictional scenario: NIGHTJAR…",
+          "Decision point simulated…",
+          "Scenario complete. No action taken outside this page."
+        ], "Training objective achieved. All systems remain untouched.", null);
+      });
+
+      const puzzles = [
+        { text: "DWWDFN DW GDZQ", answer: "ATTACK AT DAWN", shift: 3 },
+        { text: "PHHW DW WKH JDWH", answer: "MEET AT THE GATE", shift: 3 },
+        { text: "VWDB LQ WKH VKDGRZV", answer: "STAY IN THE SHADOWS", shift: 3 },
+        { text: "WKH HDJOH KDV ODQGHG", answer: "THE EAGLE HAS LANDED", shift: 3 }
+      ];
+      let puzzleIndex = 0;
+      const cipherText = document.getElementById("cipher-text");
+      const puzzleNumber = document.getElementById("puzzle-number");
+      const feedback = document.getElementById("game-feedback");
+      const answerInput = document.getElementById("answer");
+      function loadPuzzle() {
+        const puzzle = puzzles[puzzleIndex];
+        cipherText.textContent = puzzle.text;
+        cipherText.setAttribute("aria-label", "Encrypted message: " + puzzle.text);
+        puzzleNumber.textContent = "PUZZLE " + String(puzzleIndex + 1).padStart(2, "0");
+        document.getElementById("shift-label").textContent = "Shift key: " + puzzle.shift;
+        answerInput.value = "";
+      }
+      document.getElementById("decode-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+        const guess = answerInput.value.trim().replace(/\s+/g, " ").toUpperCase();
+        if (!guess) {
+          feedback.textContent = "Enter a phrase first, agent.";
+          feedback.className = "game-feedback bad";
+          answerInput.focus();
+          return;
+        }
+        if (guess === puzzles[puzzleIndex].answer) {
+          feedback.textContent = "Correct. Cipher cleared; loading the next message.";
+          feedback.className = "game-feedback good";
+          log("Cipher exercise " + String(puzzleIndex + 1).padStart(2, "0") + " solved.", "ok");
+          puzzleIndex = (puzzleIndex + 1) % puzzles.length;
+          window.setTimeout(function () {
+            loadPuzzle();
+            feedback.textContent = "New message loaded. Decode at your own pace.";
+            feedback.className = "game-feedback";
+          }, reducedMotion ? 80 : 500);
+        } else {
+          feedback.textContent = "Not quite. Check the shift and try again.";
+          feedback.className = "game-feedback bad";
+          log("Cipher attempt did not match. Try another decode.", "warn");
+        }
+      });
+
+      // Ambient falling glyphs are decorative and pause under reduced-motion preference.
+      const canvas = document.getElementById("matrix");
+      const ctx = canvas.getContext("2d");
+      const glyphs = "01アイウエオカキクケコサシスセソ";
+      let drops = [];
+      let frame;
+      let width = 0;
+      let height = 0;
+      function resizeRain() {
+        const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.floor(width * ratio);
+        canvas.height = Math.floor(height * ratio);
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        drops = Array.from({ length: Math.ceil(width / 19) }, function () {
+          return Math.random() * height / 18;
+        });
+      }
+      function drawRain() {
+        ctx.fillStyle = "rgba(7, 16, 13, .12)";
+        ctx.fillRect(0, 0, width, height);
+        ctx.font = "12px monospace";
+        drops.forEach(function (y, index) {
+          ctx.fillStyle = index % 5 === 0 ? "rgba(114,245,160,.72)" : "rgba(62,154,91,.56)";
+          ctx.fillText(glyphs.charAt(Math.floor(Math.random() * glyphs.length)), index * 19, y * 18);
+          drops[index] = y * 18 > height && Math.random() > .975 ? 0 : y + .48;
+        });
+        frame = window.requestAnimationFrame(drawRain);
+      }
+      if (!reducedMotion && ctx) {
+        resizeRain();
+        drawRain();
+        window.addEventListener("resize", resizeRain, { passive: true });
+      } else {
+        canvas.style.display = "none";
+      }
+      window.addEventListener("pagehide", function () {
+        if (frame) window.cancelAnimationFrame(frame);
+      }, { once: true });
+    })();
+  </script>
+</body>
+</html>
