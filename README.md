@@ -2,7 +2,7 @@
 # 🕵️ Secret Agent Hacker Terminal
 
 
-**Live App:** [Paste Your GitHub Pages URL]
+**Live App:* (https://crazy-app-student-101.vercel.app/)
 
 ## 🚀 About the Project
 
@@ -40,7 +40,7 @@ These tests help verify that the relevant JavaScript function produces the expec
 
 ## 🌐 Live Demo
 
-[Click here to open the live application](PASTE_YOUR_GITHUB_PAGES_URL_HERE)
+[Click here to open the live application](https://crazy-app-student-101.vercel.app/)
 
 ## 📂 Source Code
 
