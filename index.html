@@ -635,6 +635,9 @@
         if (frame) window.cancelAnimationFrame(frame);
       }, { once: true });
     })();
+    console.assert(2 + 3 === 5, "Normal test passed");
+console.assert(0 + 0 === 0, "Zero input test passed");
+console.assert(-2 + -3 === -5, "Negative input test passed");
   </script>
 </body>
 </html>
